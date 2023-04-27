@@ -194,6 +194,38 @@ def angle_between_fixed_and_rotating_vector(fixed_vector, rotating_vector):
         angle = 360 - angle
     return angle
 
+def play_video_from_file(filepath):
+    # Create a VideoCapture object and read from the input file
+    cap = cv2.VideoCapture(filepath)
+
+    # Check if the camera opened successfully
+    if not cap.isOpened():
+        print("Error opening video file")
+        exit()
+
+    # Read until video is completed
+    while cap.isOpened():
+        # Capture frame-by-frame
+        ret, frame = cap.read()
+
+        # If the frame is not read correctly, break
+        if not ret:
+            break
+
+        # Display the resulting frame
+        cv2.imshow("Video", frame)
+
+        # Press Q on keyboard to exit
+        key = cv2.waitKey(33) & 0xFF
+        if key == ord('q'):
+            break
+
+    # When everything done, release the video capture object
+    cap.release()
+    # Closes all the frames
+    cv2.destroyAllWindows()
+
+
 def calc_rotation_direction(arr):
     n = len(arr)
     mid = n // 2
@@ -208,3 +240,52 @@ def calc_rotation_direction(arr):
     else:
         return "no rotation needed"
 
+def apply_mediapipe_holistic_model(filepath):
+    cap = cv2.VideoCapture(filepath)
+    with mp_holistic.Holistic(min_detection_confidence=0.5,min_tracking_confidence=0.5) as holistic:
+        while cap.isOpened():
+            success, image = cap.read()
+            if not success:
+                print("Ignoring empty camera frame.")
+                # If loading a video, use 'break' instead of 'continue'.
+                continue
+
+            # To improve performance, optionally mark the image as not writeable to
+            # pass by reference.
+            image.flags.writeable = False
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            results = holistic.process(image)
+
+            # Draw landmark annotation on the image.
+            image.flags.writeable = True
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            mp_drawing.draw_landmarks(
+                image,
+                results.pose_landmarks,
+                mp_holistic.POSE_CONNECTIONS,
+                landmark_drawing_spec=mp_drawing_styles
+                .get_default_pose_landmarks_style())
+
+            try:
+            ######################################################
+            #Extract Joint coordinates
+                my_landmarks = results.pose_landmarks.landmark
+                joint_coordinates = get_coordinates(my_landmarks)
+            #calculate joint angles
+                req_angles = get_all_angles(joint_coordinates)
+                req_angles = np.around(req_angles,2)
+            #display joint angles
+            ###########################
+            #############################
+
+            except Exception as e:
+                print('error',e)
+                pass
+
+            # Flip the image horizontally for a selfie-view display.
+
+            cv2.imshow('MediaPipe Holistic',image)
+            if cv2.waitKey(5) & 0xFF == 27:
+                break
+    cap.release()
+    cv2.destroyAllWindows()
