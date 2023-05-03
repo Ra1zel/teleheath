@@ -289,3 +289,28 @@ def apply_mediapipe_holistic_model(filepath):
                 break
     cap.release()
     cv2.destroyAllWindows()
+
+
+
+
+def points_on_line(a, b, num_points=10):
+    # Create a unit vector in the direction from a to b
+    v = (b - a) / np.linalg.norm(b - a)
+
+    # Create an array of t values from 0 to 1 with num_points elements
+    t_values = np.linspace(0, 1, num_points)
+
+    # Calculate the coordinates of the points on the line using the parameterization r = a + t*v
+    points = np.array([a + t*v for t in t_values])
+
+    return points
+
+
+def distance(a, b):
+    # Calculate the difference between the two coordinates
+    diff = b - a
+
+    # Calculate the Euclidean distance between the two coordinates using numpy's norm function
+    dist = np.linalg.norm(diff)
+
+    return dist
